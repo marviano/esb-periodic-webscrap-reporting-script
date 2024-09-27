@@ -17,9 +17,10 @@ from datetime import datetime, timezone, timedelta
 
 def wait_for_non_zero_text(driver, element_id, timeout=30):
     try:
-        return WebDriverWait(driver, timeout).until(
+        WebDriverWait(driver, timeout).until(
             lambda d: d.find_element(By.ID, element_id).text.strip() not in ['0', '']
         )
+        return True
     except TimeoutException:
         return False
 
@@ -80,8 +81,8 @@ def login_and_extract_data(driver, username, password, max_retries=3):
             print(f"Navigated to dashboard for {username}")
             
             if not wait_for_non_zero_text(driver, 'todayHighlightCurrentSales'):
-                print(f"Data not loaded for {username}, retrying...")
-                continue
+                print(f"No sales data available for {username}")
+                return "NO_DATA"
             
             data = {}
             elements = [
@@ -119,7 +120,7 @@ def login_and_extract_data(driver, username, password, max_retries=3):
         time.sleep(5)
     
     print(f"Failed to retrieve data for {username} after {max_retries} attempts")
-    return None
+    return "ERROR"
 
 def create_beautiful_email(data, report_type, include_footer=True):
     current_time = datetime.now(timezone.utc) + timedelta(hours=7)
@@ -135,6 +136,17 @@ def create_beautiful_email(data, report_type, include_footer=True):
             th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
             th {{ background-color: #f2f2f2; color: #0066cc; }}
             .total {{ font-weight: bold; background-color: #e6f2ff; }}
+            .grand-total {{ 
+                font-size: 1.2em; 
+                font-weight: bold; 
+                color: #009900; 
+                background-color: #e6f2ff; 
+                padding: 15px; 
+                border: 2px solid #0066cc; 
+                border-radius: 5px; 
+                margin-top: 20px; 
+                text-align: center;
+            }}
             .footer {{ font-size: 0.8em; color: #666; text-align: center; margin-top: 20px; }}
         </style>
     </head>
@@ -153,6 +165,7 @@ def create_beautiful_email(data, report_type, include_footer=True):
 
     html += f"<p>Generated on: {formatted_time}</p>"
 
+    grand_total = 0
     for loc in locations:
         offline_data = data.get(f"{loc} Offline", {})
         online_data = data.get(f"{loc} Online", {})
@@ -160,6 +173,7 @@ def create_beautiful_email(data, report_type, include_footer=True):
         offline_sales = float(offline_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
         online_sales = float(online_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
         total_sales = offline_sales + online_sales
+        grand_total += total_sales
 
         html += f"""
         <h2>{loc}</h2>
@@ -182,6 +196,13 @@ def create_beautiful_email(data, report_type, include_footer=True):
             </tr>
         </table>
         """
+
+    # Add grand total with simplified text and green color
+    html += f"""
+    <div class="grand-total">
+        Total Omset = Rp {grand_total:,.0f}
+    </div>
+    """
 
     if include_footer:
         html += """
@@ -232,8 +253,8 @@ def main():
         {"name": "Hotways Magelang Online", "username": "hc38psales", "password": "-@}5M2=C1`Ud?"},
         {"name": "Hotways Ponorogo Offline", "username": "hcc39sales", "password": "cz2F`a&Ki2;7#"},
         {"name": "Hotways Ponorogo Online", "username": "hc39psales", "password": "cz2F`a&Ki2;7#"},
-        {"name": "Hotways Bojonegoro Offline", "username": "hcc41sales", "password": "1|3e$K<£7\'?5"},
-        {"name": "Hotways Bojonegoro Online", "username": "hc41psales", "password": "1|3e$K<£7\'?5"}
+        {"name": "Hotways Bojonegoro Offline", "username": "hcc41sales", "password": "09272024Bojonegoro!"},
+        {"name": "Hotways Bojonegoro Online", "username": "hc41psales", "password": "09272024Bojonegoro!"}
     ]
 
     chrome_options = Options()
@@ -244,8 +265,8 @@ def main():
 
     service = Service(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop', 'chromedriver.exe'))
     
-    max_overall_retries = 5  # Number of times to retry the entire process
-    max_account_retries = 3  # Number of times to retry each account before restarting
+    max_overall_retries = 5
+    max_account_retries = 3
 
     for overall_attempt in range(max_overall_retries):
         try:
@@ -260,56 +281,58 @@ def main():
                 account_success = False
                 for account_attempt in range(max_account_retries):
                     print(f"\nProcessing account: {account['name']} (Attempt {account_attempt + 1})")
-                    try:
-                        data = login_and_extract_data(driver, account["username"], account["password"])
-                        if data and float(data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.')) > 0:
-                            all_data[account["name"]] = data
-                            print(f"Data successfully retrieved for {account['name']}")
-                            account_success = True
-                            break
-                        else:
-                            print(f"Failed to retrieve valid data for {account['name']}")
-                            raise Exception(f"Invalid data for {account['name']}")
-                    except Exception as e:
-                        print(f"Error processing {account['name']}: {e}")
-                        print(traceback.format_exc())
+                    result = login_and_extract_data(driver, account["username"], account["password"])
+                    if result == "NO_DATA":
+                        print(f"No sales data available for {account['name']}. Moving to next account.")
+                        account_success = True
+                        break
+                    elif result == "ERROR":
+                        print(f"Error occurred for {account['name']}. Retrying...")
+                    else:
+                        all_data[account["name"]] = result
+                        print(f"Data successfully retrieved for {account['name']}")
+                        account_success = True
+                        break
                     
                     if account_attempt < max_account_retries - 1:
                         print(f"Retrying {account['name']} in 30 seconds...")
-                        time.sleep(15)
+                        time.sleep(30)
                 
                 if not account_success:
-                    raise Exception(f"Failed to retrieve data for {account['name']} after {max_account_retries} attempts")
+                    print(f"Failed to retrieve data for {account['name']} after {max_account_retries} attempts")
                 
                 time.sleep(5)
 
-            # If we've made it here, we have complete data for all accounts
-            summary = "Summary:\n"
-            for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
-                offline_data = all_data.get(f"{location} Offline", {})
-                online_data = all_data.get(f"{location} Online", {})
-                
-                offline_sales = float(offline_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
-                online_sales = float(online_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
-                
-                total_sales = offline_sales + online_sales
-                
-                summary += f"{location}\n"
-                summary += f"Offline Gross Sales: {offline_sales:,.0f}\n"
-                summary += f"Online Gross Sales: {online_sales:,.0f}\n"
-                summary += f"Total Gross Sales: {total_sales:,.0f}\n\n"
+            # Process and send emails only if we have data
+            if all_data:
+                summary = "Summary:\n"
+                for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
+                    offline_data = all_data.get(f"{location} Offline", {})
+                    online_data = all_data.get(f"{location} Online", {})
+                    
+                    offline_sales = float(offline_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
+                    online_sales = float(online_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
+                    
+                    total_sales = offline_sales + online_sales
+                    
+                    summary += f"{location}\n"
+                    summary += f"Offline Gross Sales: {offline_sales:,.0f}\n"
+                    summary += f"Online Gross Sales: {online_sales:,.0f}\n"
+                    summary += f"Total Gross Sales: {total_sales:,.0f}\n\n"
 
-            print(summary)
+                print(summary)
                 
             # Send data for all locations to the first group of recipients
             all_locations_email = create_beautiful_email(all_data, "All")
             all_locations_recipients = ["alvusebastian@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
+            # all_locations_recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
             # Send Ponorogo and Bojonegoro data to the second group of recipients
             ponorogo_bojonegoro_data = {k: v for k, v in all_data.items() if "Ponorogo" in k or "Bojonegoro" in k}
             ponorogo_bojonegoro_email = create_beautiful_email(ponorogo_bojonegoro_data, "Ponorogo and Bojonegoro")
             ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
+            # ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Periodic Report - Ponorogo and Bojonegoro", ponorogo_bojonegoro_email, ponorogo_bojonegoro_recipients)
 
             # If we've made it here, everything was successful, so we can break the retry loop
