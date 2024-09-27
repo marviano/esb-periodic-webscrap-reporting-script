@@ -253,7 +253,9 @@ def main():
         {"name": "Hotways Magelang Offline", "username": "hcc38sales", "password": "-@}5M2=C1`Ud?"},
         {"name": "Hotways Magelang Online", "username": "hc38psales", "password": "-@}5M2=C1`Ud?"},
         {"name": "Hotways Ponorogo Offline", "username": "hcc39sales", "password": "cz2F`a&Ki2;7#"},
-        {"name": "Hotways Ponorogo Online", "username": "hc39psales", "password": "cz2F`a&Ki2;7#"}
+        {"name": "Hotways Ponorogo Online", "username": "hc39psales", "password": "cz2F`a&Ki2;7#"},
+        {"name": "Hotways Bojonegoro Offline", "username": "hcc41sales", "password": "1|3e$K<£7\'?5"},
+        {"name": "Hotways Bojonegoro Online", "username": "hc41psales", "password": "1|3e$K<£7\'?5"}
     ]
 
     chrome_options = Options()
@@ -305,7 +307,7 @@ def main():
 
             # If we've made it here, we have complete data for all accounts
             summary = "Summary:\n"
-            for location in ["Hotways Ponorogo", "Hotways Magelang"]:
+            for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
                 offline_data = all_data.get(f"{location} Offline", {})
                 online_data = all_data.get(f"{location} Online", {})
                 
@@ -321,16 +323,18 @@ def main():
 
             print(summary)
                 
-            # Send Hotways Ponorogo data to yudi_soetrisno70@yahoo.com
             ponorogo_email = create_beautiful_email(all_data, "Hotways Ponorogo")
             ponorogo_recipients = ["yudi_soetrisno70@yahoo.com", "alvusebastian@gmail.com"]
-            # ponorogo_recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Ponorogo Periodic Report", ponorogo_email, ponorogo_recipients)
 
-            # Send both Hotways Ponorogo and Magelang data to other recipients
+            # Send Hotways Bojonegoro data to yudi_soetrisno70@yahoo.com
+            bojonegoro_email = create_beautiful_email(all_data, "Hotways Bojonegoro")
+            bojonegoro_recipients = ["alvusebastian@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com", "yudi_soetrisno70@yahoo.com"]
+            send_email("Hotways Bojonegoro Periodic Report", bojonegoro_email, bojonegoro_recipients)
+
+            # Send data for all locations to other recipients
             full_email = create_beautiful_email(all_data, "Both")
             recipients = ["alvusebastian@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
-            # recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Periodic Report", full_email, recipients)
 
             # If we've made it here, everything was successful, so we can break the retry loop
