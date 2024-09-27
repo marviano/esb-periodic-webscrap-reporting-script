@@ -121,7 +121,7 @@ def login_and_extract_data(driver, username, password, max_retries=3):
     print(f"Failed to retrieve data for {username} after {max_retries} attempts")
     return None
 
-def create_beautiful_email(data, location, include_footer=True):
+def create_beautiful_email(data, report_type, include_footer=True):
     current_time = datetime.now(timezone.utc) + timedelta(hours=7)
     formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S GMT+7")
 
@@ -140,21 +140,29 @@ def create_beautiful_email(data, location, include_footer=True):
     </head>
     <body>
     """
-    if location == "Both":
-        html += f"<h1>Daily Sales Report</h1>"
+    
+    if report_type == "All":
+        html += f"<h1>Daily Sales Report - All Locations</h1>"
+        locations = ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]
+    elif report_type == "Ponorogo and Bojonegoro":
+        html += f"<h1>Daily Sales Report - Ponorogo and Bojonegoro</h1>"
+        locations = ["Hotways Ponorogo", "Hotways Bojonegoro"]
     else:
-        html += f"<h1>Daily Sales Report - {location}</h1>"
+        html += f"<h1>Daily Sales Report - {report_type}</h1>"
+        locations = [report_type]
+
     html += f"<p>Generated on: {formatted_time}</p>"
 
-    if location != "Both":
-        offline_data = data.get(f"{location} Offline", {})
-        online_data = data.get(f"{location} Online", {})
+    for loc in locations:
+        offline_data = data.get(f"{loc} Offline", {})
+        online_data = data.get(f"{loc} Online", {})
         
         offline_sales = float(offline_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
         online_sales = float(online_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
         total_sales = offline_sales + online_sales
 
         html += f"""
+        <h2>{loc}</h2>
         <table>
             <tr>
                 <th>Category</th>
@@ -174,36 +182,6 @@ def create_beautiful_email(data, location, include_footer=True):
             </tr>
         </table>
         """
-    else:
-        for loc in ["Hotways Ponorogo", "Hotways Magelang"]:
-            offline_data = data.get(f"{loc} Offline", {})
-            online_data = data.get(f"{loc} Online", {})
-            
-            offline_sales = float(offline_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
-            online_sales = float(online_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
-            total_sales = offline_sales + online_sales
-
-            html += f"""
-            <h2>{loc}</h2>
-            <table>
-                <tr>
-                    <th>Category</th>
-                    <th>Gross Sales</th>
-                </tr>
-                <tr>
-                    <td>Offline Gross Sales</td>
-                    <td>Rp {offline_sales:,.0f}</td>
-                </tr>
-                <tr>
-                    <td>Online Gross Sales</td>
-                    <td>Rp {online_sales:,.0f}</td>
-                </tr>
-                <tr class="total">
-                    <td>Total Gross Sales</td>
-                    <td>Rp {total_sales:,.0f}</td>
-                </tr>
-            </table>
-            """
 
     if include_footer:
         html += """
@@ -323,19 +301,16 @@ def main():
 
             print(summary)
                 
-            ponorogo_email = create_beautiful_email(all_data, "Hotways Ponorogo")
-            ponorogo_recipients = ["yudi_soetrisno70@yahoo.com", "alvusebastian@gmail.com"]
-            send_email("Hotways Ponorogo Periodic Report", ponorogo_email, ponorogo_recipients)
+            # Send data for all locations to the first group of recipients
+            all_locations_email = create_beautiful_email(all_data, "All")
+            all_locations_recipients = ["alvusebastian@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
+            send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
-            # Send Hotways Bojonegoro data to yudi_soetrisno70@yahoo.com
-            bojonegoro_email = create_beautiful_email(all_data, "Hotways Bojonegoro")
-            bojonegoro_recipients = ["alvusebastian@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com", "yudi_soetrisno70@yahoo.com"]
-            send_email("Hotways Bojonegoro Periodic Report", bojonegoro_email, bojonegoro_recipients)
-
-            # Send data for all locations to other recipients
-            full_email = create_beautiful_email(all_data, "Both")
-            recipients = ["alvusebastian@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
-            send_email("Hotways Periodic Report", full_email, recipients)
+            # Send Ponorogo and Bojonegoro data to the second group of recipients
+            ponorogo_bojonegoro_data = {k: v for k, v in all_data.items() if "Ponorogo" in k or "Bojonegoro" in k}
+            ponorogo_bojonegoro_email = create_beautiful_email(ponorogo_bojonegoro_data, "Ponorogo and Bojonegoro")
+            ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
+            send_email("Hotways Periodic Report - Ponorogo and Bojonegoro", ponorogo_bojonegoro_email, ponorogo_bojonegoro_recipients)
 
             # If we've made it here, everything was successful, so we can break the retry loop
             break
