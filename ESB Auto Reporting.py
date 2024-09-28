@@ -361,37 +361,41 @@ def main():
             print("All overall attempts failed. Please check your internet connection and try again later.")
 
 if __name__ == "__main__":
-    GMT7 = timezone(timedelta(hours=7))
+    WIB = timezone(timedelta(hours=7))  # Western Indonesia Time (GMT+7)
+    scheduled_times = [12, 14, 16, 18, 20, 22]
+    time_buffer = timedelta(minutes=5)  # Allow a 5-minute buffer after each scheduled time
+    
     while True:
-        current_time = datetime.now(GMT7)
-        print(f"Current time: {current_time}")
-        print(f"Current hour: {current_time.hour}")
-        print(f"Current minute: {current_time.minute}")
+        current_time = datetime.now(WIB)
+        print(f"Current time (WIB/GMT+7): {current_time}")
         
-        start_time = current_time.replace(hour=12, minute=00, second=0, microsecond=0)
-        end_time = current_time.replace(hour=22, minute=30, second=0, microsecond=0)
-        
-        if start_time <= current_time < end_time:
-            print(f"Starting script execution at {current_time}")
-            main()
-            print(f"Finished script execution at {datetime.now(GMT7)}")
-            
-            next_run = current_time + timedelta(hours=2)
-            if next_run >= end_time:
-                next_run = start_time + timedelta(days=1)
-                print(f"Next run would be after end time. Waiting until next day's start time: {next_run}")
-            else:
-                print(f"Waiting until next run at {next_run}")
-            
-            sleep_seconds = (next_run - current_time).total_seconds()
-            time.sleep(sleep_seconds)
+        # Check if we're within the buffer period of any scheduled time
+        for hour in scheduled_times:
+            scheduled_time = current_time.replace(hour=hour, minute=0, second=0, microsecond=0)
+            if scheduled_time <= current_time <= scheduled_time + time_buffer:
+                print(f"Running report for scheduled time: {scheduled_time}")
+                main()
+                # Sleep for the buffer period to avoid multiple executions
+                time.sleep(time_buffer.total_seconds())
+                break
         else:
-            next_run = start_time
-            if current_time >= end_time:
-                next_run += timedelta(days=1)
+            # Find the next scheduled time
+            next_run = None
+            for hour in scheduled_times:
+                scheduled_time = current_time.replace(hour=hour, minute=0, second=0, microsecond=0)
+                if current_time < scheduled_time:
+                    next_run = scheduled_time
+                    break
             
+            # If we've passed the last scheduled time for today, set next_run to the first time tomorrow
+            if next_run is None:
+                next_run = current_time.replace(hour=scheduled_times[0], minute=0, second=0, microsecond=0) + timedelta(days=1)
+            
+            # Calculate sleep time
             sleep_seconds = (next_run - current_time).total_seconds()
-            print(f"Outside operating hours. Next run at {next_run.strftime('%Y-%m-%d %H:%M:%S')}. Sleeping for {sleep_seconds:.0f} seconds.")
-            time.sleep(60)  # Check every minute outside operating hours
-
-        print("Checking time again...")
+            
+            print(f"Next run scheduled for: {next_run}")
+            print(f"Sleeping for {sleep_seconds:.0f} seconds")
+            
+            # Sleep until the next scheduled time
+            time.sleep(min(sleep_seconds, 60))  # Check at least every minute
