@@ -324,7 +324,7 @@ def main():
                 
             # Send data for all locations to the first group of recipients
             all_locations_email = create_beautiful_email(all_data, "All")
-            all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
+            all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
             # all_locations_recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
