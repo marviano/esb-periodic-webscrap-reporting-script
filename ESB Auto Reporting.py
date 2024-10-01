@@ -362,7 +362,7 @@ def main():
 
 if __name__ == "__main__":
     WIB = timezone(timedelta(hours=7))  # Western Indonesia Time (GMT+7)
-    scheduled_times = [12, 14, 16, 18, 20, 22]
+    scheduled_times = [12, 14, 16, 18, 20, 22.15]
     time_buffer = timedelta(minutes=5)  # Allow a 5-minute buffer after each scheduled time
     
     while True:
@@ -371,7 +371,7 @@ if __name__ == "__main__":
         
         # Check if we're within the buffer period of any scheduled time
         for hour in scheduled_times:
-            scheduled_time = current_time.replace(hour=hour, minute=0, second=0, microsecond=0)
+            scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
             if scheduled_time <= current_time <= scheduled_time + time_buffer:
                 print(f"Running report for scheduled time: {scheduled_time}")
                 main()
@@ -382,14 +382,14 @@ if __name__ == "__main__":
             # Find the next scheduled time
             next_run = None
             for hour in scheduled_times:
-                scheduled_time = current_time.replace(hour=hour, minute=0, second=0, microsecond=0)
+                scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
                 if current_time < scheduled_time:
                     next_run = scheduled_time
                     break
             
             # If we've passed the last scheduled time for today, set next_run to the first time tomorrow
             if next_run is None:
-                next_run = current_time.replace(hour=scheduled_times[0], minute=0, second=0, microsecond=0) + timedelta(days=1)
+                next_run = current_time.replace(hour=int(scheduled_times[0]), minute=int((scheduled_times[0] % 1) * 60), second=0, microsecond=0) + timedelta(days=1)
             
             # Calculate sleep time
             sleep_seconds = (next_run - current_time).total_seconds()
