@@ -14,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
 from datetime import datetime, timezone, timedelta
+from db_operations import save_to_database
 
 def wait_for_non_zero_text(driver, element_id, timeout=30):
     try:
@@ -321,6 +322,11 @@ def main():
                     summary += f"Total Gross Sales: {total_sales:,.0f}\n\n"
 
                 print(summary)
+                
+                # Save to database only for the 22:15 execution
+                current_time = datetime.now(WIB)
+                if current_time.hour == 22 and current_time.minute >= 15 and current_time.minute < 20:
+                    save_to_database(all_data)
                 
             # Send data for all locations to the first group of recipients
             all_locations_email = create_beautiful_email(all_data, "All")
