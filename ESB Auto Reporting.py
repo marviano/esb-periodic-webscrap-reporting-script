@@ -15,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
 from datetime import datetime, timezone, timedelta
 from db_operations import save_to_database
+WIB = timezone(timedelta(hours=7))  # Western Indonesia Time (GMT+7)
 
 def wait_for_non_zero_text(driver, element_id, timeout=30):
     try:
@@ -310,23 +311,32 @@ def main():
                 for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
                     offline_data = all_data.get(f"{location} Offline", {})
                     online_data = all_data.get(f"{location} Online", {})
-                    
+                
                     offline_sales = float(offline_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
                     online_sales = float(online_data.get('todayHighlightcurrentDailyGrossSales', '0').replace('.', '').replace(',', '.'))
                     
-                    total_sales = offline_sales + online_sales
-                    
+                    total_sales = offline_sales + online_sales                        
                     summary += f"{location}\n"
                     summary += f"Offline Gross Sales: {offline_sales:,.0f}\n"
                     summary += f"Online Gross Sales: {online_sales:,.0f}\n"
                     summary += f"Total Gross Sales: {total_sales:,.0f}\n\n"
 
-                print(summary)
+                    print(summary)
+
+                    # Save to database in test mode | Uncomment to test
+                    # current_time = datetime.now(WIB)
+                    # print(f"Saving data to database at {current_time}")
+                    # save_to_database(all_data)
+                    # print("Data saved successfully")
                 
-                # Save to database only for the 22:15 execution
+                # Save to database only for the 22:15 execution | ORIGINAL CODE | Comment to test
                 current_time = datetime.now(WIB)
                 if current_time.hour == 22 and current_time.minute >= 15 and current_time.minute < 20:
+                    print(f"Saving data to database at {current_time}")
                     save_to_database(all_data)
+                    print("Data saved successfully")
+                else:
+                    print(f"Not saving data at {current_time} as it's not within the 22:15-22:19 window")
                 
             # Send data for all locations to the first group of recipients
             all_locations_email = create_beautiful_email(all_data, "All")
@@ -367,41 +377,43 @@ def main():
             print("All overall attempts failed. Please check your internet connection and try again later.")
 
 if __name__ == "__main__":
-    WIB = timezone(timedelta(hours=7))  # Western Indonesia Time (GMT+7)
     scheduled_times = [12, 14, 16, 18, 20, 22.15]
     time_buffer = timedelta(minutes=5)  # Allow a 5-minute buffer after each scheduled time
+    test_mode = False # change to true and uncomment certain part if u want to start testing
     
     while True:
         current_time = datetime.now(WIB)
         print(f"Current time (WIB/GMT+7): {current_time}")
         
-        # Check if we're within the buffer period of any scheduled time
-        for hour in scheduled_times:
-            scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
-            if scheduled_time <= current_time <= scheduled_time + time_buffer:
-                print(f"Running report for scheduled time: {scheduled_time}")
-                main()
-                # Sleep for the buffer period to avoid multiple executions
-                time.sleep(time_buffer.total_seconds())
-                break
+        if test_mode:
+            print(f"Running report for test mode at: {current_time}")
+            main()
+            print("Sleeping for 60 seconds...")
+            time.sleep(60)  # Sleep for 1 minute
         else:
-            # Find the next scheduled time
-            next_run = None
+            # Original scheduling logic (commented out) | ORIGINAL CODE | Comment to test
             for hour in scheduled_times:
                 scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
-                if current_time < scheduled_time:
-                    next_run = scheduled_time
+                if scheduled_time <= current_time <= scheduled_time + time_buffer:
+                    print(f"Running report for scheduled time: {scheduled_time}")
+                    main()
+                    time.sleep(time_buffer.total_seconds())
                     break
-            
-            # If we've passed the last scheduled time for today, set next_run to the first time tomorrow
-            if next_run is None:
-                next_run = current_time.replace(hour=int(scheduled_times[0]), minute=int((scheduled_times[0] % 1) * 60), second=0, microsecond=0) + timedelta(days=1)
-            
-            # Calculate sleep time
-            sleep_seconds = (next_run - current_time).total_seconds()
-            
-            print(f"Next run scheduled for: {next_run}")
-            print(f"Sleeping for {sleep_seconds:.0f} seconds")
-            
-            # Sleep until the next scheduled time
-            time.sleep(min(sleep_seconds, 60))  # Check at least every minute
+            else:
+                next_run = None
+                for hour in scheduled_times:
+                    scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
+                    if current_time < scheduled_time:
+                        next_run = scheduled_time
+                        break
+                
+                if next_run is None:
+                    next_run = current_time.replace(hour=int(scheduled_times[0]), minute=int((scheduled_times[0] % 1) * 60), second=0, microsecond=0) + timedelta(days=1)
+                
+                sleep_seconds = (next_run - current_time).total_seconds()
+                
+                print(f"Next run scheduled for: {next_run}")
+                print(f"Sleeping for {sleep_seconds:.0f} seconds")
+                
+                time.sleep(min(sleep_seconds, 60))
+            # pass  # Remove this 'pass' when uncommenting the original logic | Uncomment to test
