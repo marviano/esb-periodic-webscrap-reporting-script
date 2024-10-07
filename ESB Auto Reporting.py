@@ -3,7 +3,6 @@ import time
 import requests
 import traceback
 import smtplib
-# from zoneinfo import ZoneInfo  # Add this line
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from selenium import webdriver
@@ -199,7 +198,6 @@ def create_beautiful_email(data, report_type, include_footer=True):
         </table>
         """
 
-    # Add grand total with simplified text and green color
     html += f"""
     <div class="grand-total">
         Total Omset = Rp {grand_total:,.0f}
@@ -249,6 +247,13 @@ def send_email(subject, body, to_email):
     except Exception as e:
         print(f"Error sending email: {e}")
 
+def is_within_save_window(current_time, scheduled_times, grace_period_minutes=15):
+    for scheduled_hour in scheduled_times:
+        scheduled_time = current_time.replace(hour=int(scheduled_hour), minute=int((scheduled_hour % 1) * 60), second=0, microsecond=0)
+        if scheduled_time <= current_time <= scheduled_time + timedelta(minutes=grace_period_minutes):
+            return True
+    return False
+
 def main():
     accounts = [
         {"name": "Hotways Magelang Offline", "username": "hcc38sales", "password": "-@}5M2=C1`Ud?"},
@@ -265,7 +270,9 @@ def main():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
 
-    service = Service(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop', 'chromedriver.exe'))
+    chromedriver_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chromedriver.exe')
+    service = Service(chromedriver_path)
+    # service = Service(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop', 'chromedriver.exe'))
     
     max_overall_retries = 5
     max_account_retries = 3
@@ -305,7 +312,6 @@ def main():
                 
                 time.sleep(5)
 
-            # Process and send emails only if we have data
             if all_data:
                 summary = "Summary:\n"
                 for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
@@ -321,34 +327,28 @@ def main():
                     summary += f"Online Gross Sales: {online_sales:,.0f}\n"
                     summary += f"Total Gross Sales: {total_sales:,.0f}\n\n"
 
-                    print(summary)
-
-                    # Save to database in test mode | Uncomment to test
-                    # current_time = datetime.now(WIB)
-                    # print(f"Saving data to database at {current_time}")
-                    # save_to_database(all_data)
-                    # print("Data saved successfully")
-                
-                # Save to database only for the 22:15 execution | ORIGINAL CODE | Comment to test
-                current_time = datetime.now(WIB)
-                if current_time.hour == 22 and current_time.minute >= 15 and current_time.minute < 20:
-                    print(f"Saving data to database at {current_time}")
-                    save_to_database(all_data)
-                    print("Data saved successfully")
-                else:
-                    print(f"Not saving data at {current_time} as it's not within the 22:15-22:19 window")
+                print(summary)
+            
+            current_time = datetime.now(WIB)
+            scheduled_times = [12, 14, 16, 18, 20, 22.25]
+            if is_within_save_window(current_time, scheduled_times):
+                print(f"Saving data to database at {current_time}")
+                save_to_database(all_data)
+                print("Data saved successfully")
+            else:
+                print(f"Not saving data at {current_time} as it's not within the specified time windows")
                 
             # Send data for all locations to the first group of recipients
             all_locations_email = create_beautiful_email(all_data, "All")
-            all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
-            # all_locations_recipients = ["alvusebastian@gmail.com"]
+            # all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
+            all_locations_recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
             # Send Ponorogo and Bojonegoro data to the second group of recipients
             ponorogo_bojonegoro_data = {k: v for k, v in all_data.items() if "Ponorogo" in k or "Bojonegoro" in k}
             ponorogo_bojonegoro_email = create_beautiful_email(ponorogo_bojonegoro_data, "Ponorogo and Bojonegoro")
-            ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
-            # ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com"]
+            # ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
+            ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com"]
             send_email("Hotways Periodic Report - Ponorogo and Bojonegoro", ponorogo_bojonegoro_email, ponorogo_bojonegoro_recipients)
 
             # If we've made it here, everything was successful, so we can break the retry loop
@@ -377,9 +377,9 @@ def main():
             print("All overall attempts failed. Please check your internet connection and try again later.")
 
 if __name__ == "__main__":
-    scheduled_times = [12, 14, 16, 18, 20, 22.15]
-    time_buffer = timedelta(minutes=5)  # Allow a 5-minute buffer after each scheduled time
-    test_mode = False # change to true and uncomment certain part if u want to start testing
+    scheduled_times = [12, 14, 16, 18, 20, 22.25]
+    time_buffer = timedelta(minutes=5)
+    test_mode = False
     
     while True:
         current_time = datetime.now(WIB)
@@ -389,9 +389,8 @@ if __name__ == "__main__":
             print(f"Running report for test mode at: {current_time}")
             main()
             print("Sleeping for 60 seconds...")
-            time.sleep(60)  # Sleep for 1 minute
+            time.sleep(60)
         else:
-            # Original scheduling logic (commented out) | ORIGINAL CODE | Comment to test
             for hour in scheduled_times:
                 scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
                 if scheduled_time <= current_time <= scheduled_time + time_buffer:
@@ -416,4 +415,3 @@ if __name__ == "__main__":
                 print(f"Sleeping for {sleep_seconds:.0f} seconds")
                 
                 time.sleep(min(sleep_seconds, 60))
-            # pass  # Remove this 'pass' when uncommenting the original logic | Uncomment to tests
