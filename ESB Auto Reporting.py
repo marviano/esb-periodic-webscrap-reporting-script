@@ -330,7 +330,7 @@ def main():
                 print(summary)
             
             current_time = datetime.now(WIB)
-            scheduled_times = [12, 14, 16, 18, 20, 22.25]
+            scheduled_times = [12, 14, 16, 18, 20, 22.15]
             if is_within_save_window(current_time, scheduled_times):
                 print(f"Saving data to database at {current_time}")
                 save_to_database(all_data)
