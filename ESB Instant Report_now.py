@@ -272,7 +272,6 @@ def main():
 
     chromedriver_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chromedriver.exe')
     service = Service(chromedriver_path)
-    # service = Service(os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop', 'chromedriver.exe'))
     
     max_overall_retries = 5
     max_account_retries = 3
@@ -304,15 +303,15 @@ def main():
                         break
                     
                     if account_attempt < max_account_retries - 1:
-                        print(f"Retrying {account['name']} in 30 seconds...")
-                        time.sleep(30)
+                        time.sleep(5)  # Short delay between retries
                 
                 if not account_success:
                     print(f"Failed to retrieve data for {account['name']} after {max_account_retries} attempts")
                 
-                time.sleep(5)
+                time.sleep(2)  # Short delay between accounts
 
             if all_data:
+                # Print summary
                 summary = "Summary:\n"
                 for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
                     offline_data = all_data.get(f"{location} Offline", {})
@@ -329,29 +328,22 @@ def main():
 
                 print(summary)
             
-            current_time = datetime.now(WIB)
-            scheduled_times = [12, 14, 16, 18, 20, 22.15]
-            if is_within_save_window(current_time, scheduled_times):
-                print(f"Saving data to database at {current_time}")
+                # Save to database
+                print("Saving data to database...")
                 save_to_database(all_data)
                 print("Data saved successfully")
-            else:
-                print(f"Not saving data at {current_time} as it's not within the specified time windows")
                 
-            # Send data for all locations to the first group of recipients
-            all_locations_email = create_beautiful_email(all_data, "All")
-            all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
-            # all_locations_recipients = ["alvusebastian@gmail.com"]
-            send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
+                # Send emails
+                all_locations_email = create_beautiful_email(all_data, "All")
+                all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
+                send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
-            # Send Ponorogo and Bojonegoro data to the second group of recipients
-            ponorogo_bojonegoro_data = {k: v for k, v in all_data.items() if "Ponorogo" in k or "Bojonegoro" in k}
-            ponorogo_bojonegoro_email = create_beautiful_email(ponorogo_bojonegoro_data, "Ponorogo and Bojonegoro")
-            ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
-            # ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com"]
-            send_email("Hotways Periodic Report - Ponorogo and Bojonegoro", ponorogo_bojonegoro_email, ponorogo_bojonegoro_recipients)
+                ponorogo_bojonegoro_data = {k: v for k, v in all_data.items() if "Ponorogo" in k or "Bojonegoro" in k}
+                ponorogo_bojonegoro_email = create_beautiful_email(ponorogo_bojonegoro_data, "Ponorogo and Bojonegoro")
+                ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
+                send_email("Hotways Periodic Report - Ponorogo and Bojonegoro", ponorogo_bojonegoro_email, ponorogo_bojonegoro_recipients)
 
-            # If we've made it here, everything was successful, so we can break the retry loop
+            # If we've made it here, everything was successful
             break
 
         except WebDriverException as e:
@@ -371,47 +363,12 @@ def main():
             driver.quit()
 
         if overall_attempt < max_overall_retries - 1:
-            print(f"Overall attempt {overall_attempt + 1} failed. Restarting from the beginning in 60 seconds...")
-            time.sleep(60)
+            print(f"Overall attempt {overall_attempt + 1} failed. Retrying in 5 seconds...")
+            time.sleep(5)
         else:
             print("All overall attempts failed. Please check your internet connection and try again later.")
 
 if __name__ == "__main__":
-    scheduled_times = [12, 14, 16, 18, 20, 22.25]
-    time_buffer = timedelta(minutes=5)
-    test_mode = False
-    
-    while True:
-        current_time = datetime.now(WIB)
-        print(f"Current time (WIB/GMT+7): {current_time}")
-        
-        if test_mode:
-            print(f"Running report for test mode at: {current_time}")
-            main()
-            print("Sleeping for 60 seconds...")
-            time.sleep(60)
-        else:
-            for hour in scheduled_times:
-                scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
-                if scheduled_time <= current_time <= scheduled_time + time_buffer:
-                    print(f"Running report for scheduled time: {scheduled_time}")
-                    main()
-                    time.sleep(time_buffer.total_seconds())
-                    break
-            else:
-                next_run = None
-                for hour in scheduled_times:
-                    scheduled_time = current_time.replace(hour=int(hour), minute=int((hour % 1) * 60), second=0, microsecond=0)
-                    if current_time < scheduled_time:
-                        next_run = scheduled_time
-                        break
-                
-                if next_run is None:
-                    next_run = current_time.replace(hour=int(scheduled_times[0]), minute=int((scheduled_times[0] % 1) * 60), second=0, microsecond=0) + timedelta(days=1)
-                
-                sleep_seconds = (next_run - current_time).total_seconds()
-                
-                print(f"Next run scheduled for: {next_run}")
-                print(f"Sleeping for {sleep_seconds:.0f} seconds")
-                
-                time.sleep(min(sleep_seconds, 60))
+    print(f"Starting data collection at: {datetime.now(WIB)}")
+    main()
+    print(f"Process completed at: {datetime.now(WIB)}")
