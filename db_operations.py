@@ -24,7 +24,7 @@ def save_to_database(data):
     cursor = conn.cursor()
 
     try:
-        for branch in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
+        for branch in ["Hotways Magelang", "Hotways Bojonegoro"]:
             offline_data = data.get(f"{branch} Offline", {})
             online_data = data.get(f"{branch} Online", {})
 
@@ -88,10 +88,9 @@ def insert_test_data():
     conn = connect_to_database()
     cursor = conn.cursor()
 
-    branches = ["Ponorogo", "Magelang", "Bojonegoro"]
+    branches = ["Magelang", "Bojonegoro"]
     
     base_values = {
-        "Ponorogo": {"offline": 1000000, "online": 500000, "pax": 100},
         "Magelang": {"offline": 1200000, "online": 600000, "pax": 120},
         "Bojonegoro": {"offline": 800000, "online": 400000, "pax": 80}
     }

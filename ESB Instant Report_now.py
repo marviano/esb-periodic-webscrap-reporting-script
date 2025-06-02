@@ -156,10 +156,10 @@ def create_beautiful_email(data, report_type, include_footer=True):
     
     if report_type == "All":
         html += f"<h1>Daily Sales Report - All Locations</h1>"
-        locations = ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]
-    elif report_type == "Ponorogo and Bojonegoro":
-        html += f"<h1>Daily Sales Report - Ponorogo and Bojonegoro</h1>"
-        locations = ["Hotways Ponorogo", "Hotways Bojonegoro"]
+        locations = ["Hotways Magelang", "Hotways Bojonegoro"]
+    elif report_type == "Bojonegoro":
+        html += f"<h1>Daily Sales Report - Bojonegoro</h1>"
+        locations = ["Hotways Bojonegoro"]
     else:
         html += f"<h1>Daily Sales Report - {report_type}</h1>"
         locations = [report_type]
@@ -258,8 +258,6 @@ def main():
     accounts = [
         {"name": "Hotways Magelang Offline", "username": "hcc38sales", "password": "-@}5M2=C1`Ud?"},
         {"name": "Hotways Magelang Online", "username": "hc38psales", "password": "-@}5M2=C1`Ud?"},
-        {"name": "Hotways Ponorogo Offline", "username": "hcc39sales", "password": "cz2F`a&Ki2;7#"},
-        {"name": "Hotways Ponorogo Online", "username": "hc39psales", "password": "cz2F`a&Ki2;7#"},
         {"name": "Hotways Bojonegoro Offline", "username": "hcc41sales", "password": "09272024Bojonegoro!"},
         {"name": "Hotways Bojonegoro Online", "username": "hc41psales", "password": "09272024Bojonegoro!"}
     ]
@@ -313,7 +311,7 @@ def main():
             if all_data:
                 # Print summary
                 summary = "Summary:\n"
-                for location in ["Hotways Ponorogo", "Hotways Magelang", "Hotways Bojonegoro"]:
+                for location in ["Hotways Magelang", "Hotways Bojonegoro"]:
                     offline_data = all_data.get(f"{location} Offline", {})
                     online_data = all_data.get(f"{location} Online", {})
                 
@@ -338,10 +336,10 @@ def main():
                 all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
                 send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
-                ponorogo_bojonegoro_data = {k: v for k, v in all_data.items() if "Ponorogo" in k or "Bojonegoro" in k}
-                ponorogo_bojonegoro_email = create_beautiful_email(ponorogo_bojonegoro_data, "Ponorogo and Bojonegoro")
-                ponorogo_bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
-                send_email("Hotways Periodic Report - Ponorogo and Bojonegoro", ponorogo_bojonegoro_email, ponorogo_bojonegoro_recipients)
+                bojonegoro_data = {k: v for k, v in all_data.items() if "Bojonegoro" in k}
+                bojonegoro_email = create_beautiful_email(bojonegoro_data, "Bojonegoro")
+                bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
+                send_email("Hotways Periodic Report - Bojonegoro", bojonegoro_email, bojonegoro_recipients)
 
             # If we've made it here, everything was successful
             break
