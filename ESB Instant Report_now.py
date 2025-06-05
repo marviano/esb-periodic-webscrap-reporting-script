@@ -333,14 +333,14 @@ def main():
                 
                 # Send emails
                 all_locations_email = create_beautiful_email(all_data, "All")
-                # all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
-                all_locations_recipients = ["alvusebastian@gmail.com"]
+                all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
+                # all_locations_recipients = ["alvusebastian@gmail.com"]
                 send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
                 bojonegoro_data = {k: v for k, v in all_data.items() if "Bojonegoro" in k}
                 bojonegoro_email = create_beautiful_email(bojonegoro_data, "Bojonegoro")
-                # bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
-                bojonegoro_recipients = ["alvusebastian@gmail.com"]
+                bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
+                # bojonegoro_recipients = ["alvusebastian@gmail.com"]
                 send_email("Hotways Periodic Report - Bojonegoro", bojonegoro_email, bojonegoro_recipients)
 
             # If we've made it here, everything was successful
