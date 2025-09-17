@@ -6,6 +6,13 @@
 
 An automated Python script that collects sales data from ESB ERP system and sends periodic reports via email. This tool helps businesses monitor their daily sales performance across multiple locations automatically.
 
+## 🚨 Quick Fix for Common Errors
+
+**If you get ChromeDriver errors, download the latest version:**
+**🔗 https://chromedriver.chromium.org/downloads**
+
+**Steps:** Check Chrome version → Download matching ChromeDriver → Replace `chromedriver.exe` → Restart script
+
 ## 🚀 Features
 
 - **Automated Data Collection**: Scrapes sales data from ESB ERP system using Selenium WebDriver
@@ -25,6 +32,26 @@ Before installing, ensure you have:
 - **MySQL Database** access
 - **Gmail Account** with App Password enabled
 - **ESB ERP System** access credentials
+
+## ⚠️ Important ChromeDriver Notice
+
+**🚨 MOST COMMON ERROR: ChromeDriver Version Mismatch**
+
+If you encounter errors like:
+- `This version of ChromeDriver only supports Chrome version X`
+- `session not created: This version of ChromeDriver only supports Chrome version X`
+- `WebDriverException: unknown error: session not created`
+
+**This means your ChromeDriver is outdated!**
+
+**Solution:** Download the latest ChromeDriver from:
+**🔗 https://chromedriver.chromium.org/downloads**
+
+**Steps:**
+1. Check your Chrome version: `chrome://version/`
+2. Download matching ChromeDriver version
+3. Replace `chromedriver.exe` in project folder
+4. Restart the script
 
 ## 🛠️ Installation
 
@@ -47,11 +74,28 @@ pip install -r requirements.txt
 - `python-dotenv` - Environment variable management
 - `requests` - HTTP requests
 
-### Step 3: Download ChromeDriver
+### Step 3: Download ChromeDriver ⚠️ CRITICAL STEP
 
-1. Check your Chrome version: `chrome://version/`
-2. Download matching ChromeDriver from: https://chromedriver.chromium.org/
-3. Place `chromedriver.exe` in the project root directory
+**🚨 This is the most common source of errors!**
+
+1. **Check your Chrome version:**
+   - Open Chrome browser
+   - Go to `chrome://version/`
+   - Note the version number (e.g., 120.0.6099.109)
+
+2. **Download matching ChromeDriver:**
+   - Visit: **https://chromedriver.chromium.org/downloads**
+   - Select the version that matches your Chrome browser
+   - Download `chromedriver_win32.zip` (for Windows)
+
+3. **Install ChromeDriver:**
+   - Extract the downloaded zip file
+   - Copy `chromedriver.exe` to your project root directory
+   - Replace any existing `chromedriver.exe` file
+
+4. **Verify installation:**
+   - The `chromedriver.exe` should be in the same folder as your Python scripts
+   - File size should be around 10-20 MB
 
 ### Step 4: Set Up Environment Variables
 
@@ -220,11 +264,18 @@ chrome_options.add_argument("--window-size=1920,1080")
 
 ### Common Issues
 
-**1. ChromeDriver Version Mismatch**
+**1. 🚨 ChromeDriver Version Mismatch (MOST COMMON ERROR)**
 ```
 Error: This version of ChromeDriver only supports Chrome version X
+Error: session not created: This version of ChromeDriver only supports Chrome version X
+Error: WebDriverException: unknown error: session not created
 ```
-**Solution:** Download matching ChromeDriver version from https://chromedriver.chromium.org/
+**Solution:** 
+- **Download latest ChromeDriver:** https://chromedriver.chromium.org/downloads
+- Check Chrome version: `chrome://version/`
+- Download matching ChromeDriver version
+- Replace `chromedriver.exe` in project folder
+- **This fixes 90% of startup errors!**
 
 **2. Gmail Authentication Error**
 ```
