@@ -2,15 +2,20 @@ import mysql.connector
 from datetime import datetime, timezone, timedelta
 import random
 import calendar
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 WIB = timezone(timedelta(hours=7))
 
 def connect_to_database():
     return mysql.connector.connect(
-        host="182.253.188.171",
-        user="dbadmin",
-        password="Gfan2010!",
-        database="hotways"
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME")
     )
 
 def data_exists_for_today(cursor, branch):

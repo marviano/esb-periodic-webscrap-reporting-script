@@ -14,6 +14,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
 from datetime import datetime, timezone, timedelta
 from db_operations import save_to_database
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 WIB = timezone(timedelta(hours=7))  # Western Indonesia Time (GMT+7)
 
 def wait_for_non_zero_text(driver, element_id, timeout=30):
@@ -220,10 +224,10 @@ def create_beautiful_email(data, report_type, include_footer=True):
     return html
 
 def send_email(subject, body, to_email):
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    sender_email = "marviano.austin@gmail.com"
-    app_password = "ktqbdhbktmcdkvuf"
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    sender_email = os.getenv("SENDER_EMAIL")
+    app_password = os.getenv("EMAIL_APP_PASSWORD")
 
     message = MIMEMultipart("alternative")
     message["From"] = sender_email
@@ -256,10 +260,10 @@ def is_within_save_window(current_time, scheduled_times, grace_period_minutes=15
 
 def main():
     accounts = [
-        {"name": "Hotways Magelang Offline", "username": "hcc38sales", "password": "-@}5M2=C1`Ud?"},
-        {"name": "Hotways Magelang Online", "username": "hc38psales", "password": "-@}5M2=C1`Ud?"},
-        {"name": "Hotways Bojonegoro Offline", "username": "hcc41sales", "password": "09272024Bojonegoro!"},
-        {"name": "Hotways Bojonegoro Online", "username": "hc41psales", "password": "09272024Bojonegoro!"}
+        {"name": "Hotways Magelang Offline", "username": os.getenv("MAGELANG_OFFLINE_USERNAME"), "password": os.getenv("MAGELANG_OFFLINE_PASSWORD")},
+        {"name": "Hotways Magelang Online", "username": os.getenv("MAGELANG_ONLINE_USERNAME"), "password": os.getenv("MAGELANG_ONLINE_PASSWORD")},
+        {"name": "Hotways Bojonegoro Offline", "username": os.getenv("BOJONEGORO_OFFLINE_USERNAME"), "password": os.getenv("BOJONEGORO_OFFLINE_PASSWORD")},
+        {"name": "Hotways Bojonegoro Online", "username": os.getenv("BOJONEGORO_ONLINE_USERNAME"), "password": os.getenv("BOJONEGORO_ONLINE_PASSWORD")}
     ]
 
     chrome_options = Options()
@@ -338,15 +342,15 @@ def main():
                 
             # Send data for all locations to the first group of recipients
             all_locations_email = create_beautiful_email(all_data, "All")
-            all_locations_recipients = ["alvusebastian@gmail.com", "bart2000e@gmail.com", "headofficemilman@gmail.com", "reni.dnh2904@gmail.com", "rudihoo1302@gmail.com", "jenny_sulistiowati68@yahoo.com", "sony_hendarto@hotmail.com"]
-            # all_locations_recipients = ["alvusebastian@gmail.com"]
+            all_locations_recipients = os.getenv("ALL_LOCATIONS_RECIPIENTS", "").split(",")
+            all_locations_recipients = [email.strip() for email in all_locations_recipients if email.strip()]
             send_email("Hotways Periodic Report - All Locations", all_locations_email, all_locations_recipients)
 
             # Send Bojonegoro data to the second group of recipients
             bojonegoro_data = {k: v for k, v in all_data.items() if "Bojonegoro" in k}
             bojonegoro_email = create_beautiful_email(bojonegoro_data, "Bojonegoro")
-            bojonegoro_recipients = ["alvusebastian@gmail.com", "yudi_soetrisno70@yahoo.com"]
-            # bojonegoro_recipients = ["alvusebastian@gmail.com"]
+            bojonegoro_recipients = os.getenv("BOJONEGORO_RECIPIENTS", "").split(",")
+            bojonegoro_recipients = [email.strip() for email in bojonegoro_recipients if email.strip()]
             send_email("Hotways Periodic Report - Bojonegoro", bojonegoro_email, bojonegoro_recipients)
 
             # If we've made it here, everything was successful, so we can break the retry loop
